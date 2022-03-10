@@ -1,0 +1,11 @@
+language = "Example"
+author = "Brogamer"
+enabled = true
+
+[[translation]]
+old = "ゴーストルール"
+new = "Ghost Rule"
+
+[[translation]]
+old = "砂の惑星 feat.初音ミク"
+new = "Sand Planet feat. Hatsune Miku"
