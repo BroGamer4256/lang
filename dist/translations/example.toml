@@ -1,6 +1,6 @@
 language = "Example"
 author = "Brogamer"
-enabled = true
+enabled = false
 
 [[translation]]
 old = "ゴーストルール"
