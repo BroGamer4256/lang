@@ -4,8 +4,7 @@
 
 #define CURRENT_GAME_SUB_STATE_ADDRESS 0x140EDA82C
 
-enum SubGameState : uint32_t
-{
+enum SubGameState : uint32_t {
 	SUB_DATA_INITIALIZE,
 	SUB_SYSTEM_STARTUP,
 	SUB_SYSTEM_STARTUP_ERROR,
@@ -50,8 +49,7 @@ enum SubGameState : uint32_t
 	SUB_MAX,
 };
 
-struct
-{
+struct {
 	const char *string;
 	enum SubGameState state;
 } ConfigSubGameStates[] = {
@@ -99,8 +97,7 @@ struct
 };
 
 enum SubGameState
-strToSubGameState (const char *str)
-{
+strToSubGameState (const char *str) {
 	for (int i = 0; i < COUNTOFARR (ConfigSubGameStates); i++)
 		if (strcmp (str, ConfigSubGameStates[i].string) == 0)
 			return ConfigSubGameStates[i].state;
@@ -114,56 +111,49 @@ wchar_t **news;
 enum SubGameState *states;
 
 HOOK (void, __stdcall, DivaDrawTextW, 0x140198380, void *param, uint32_t flags,
-	  const wchar_t **text)
-{
-	for (int i = 0; i < num; i++)
-		{
-			if (states[i] != SUB_MAX)
-				{
-					if (states[i] == SUB_GAME_SEL || states[i] == SUB_SELECTOR)
-						{
-							if (*(enum SubGameState *)
-										CURRENT_GAME_SUB_STATE_ADDRESS
-									!= SUB_GAME_SEL
-								&& *(enum SubGameState *)
-										   CURRENT_GAME_SUB_STATE_ADDRESS
-									   != SUB_SELECTOR)
-								continue;
-						}
-					else if (*(enum SubGameState *)
-								 CURRENT_GAME_SUB_STATE_ADDRESS
-							 != states[i])
-						{
-							continue;
-						}
-				}
-
-			if (wcscmp (*text, olds[i]) == 0)
-				{
-					const wchar_t *ptrs[2];
-					ptrs[0] = news[i];
-					ptrs[1] = (wchar_t *)((uint64_t)ptrs[0]
-										  + wcslen (news[i]) * 2);
-					originalDivaDrawTextW (param, flags, &ptrs[0]);
-					return;
-				}
+	  const wchar_t **text) {
+	for (int i = 0; i < num; i++) {
+		if (states[i] != SUB_MAX) {
+			if (states[i] == SUB_GAME_SEL || states[i] == SUB_SELECTOR) {
+				if (*(enum SubGameState *)CURRENT_GAME_SUB_STATE_ADDRESS
+						!= SUB_GAME_SEL
+					&& *(enum SubGameState *)CURRENT_GAME_SUB_STATE_ADDRESS
+						   != SUB_SELECTOR)
+					continue;
+			} else if (*(enum SubGameState *)CURRENT_GAME_SUB_STATE_ADDRESS
+					   != states[i]) {
+				continue;
+			}
 		}
+
+		if (wcscmp (*text, olds[i]) == 0) {
+			const wchar_t *ptrs[2];
+			ptrs[0] = news[i];
+			ptrs[1] = (wchar_t *)((uint64_t)ptrs[0] + wcslen (news[i]) * 2);
+			originalDivaDrawTextW (param, flags, &ptrs[0]);
+			return;
+		}
+	}
 	originalDivaDrawTextW (param, flags, text);
+
+	/*
+	wchar_t buf[256] = { 0 };
+	swprintf (buf, 256, L"[lang] %ls\n\0", *text);
+	HANDLE consoleHandle = GetStdHandle (STD_OUTPUT_HANDLE);
+	WriteConsoleW (consoleHandle, buf, 256, NULL, NULL);
+	*/
 }
 
 BOOL WINAPI
-DllMain (HMODULE mod, DWORD cause, void *ctx)
-{
-	if (cause == DLL_PROCESS_DETACH)
-		{
-			for (int i = 0; i < num; i++)
-				{
-					free (olds[i]);
-					free (news[i]);
-				}
-			free (olds);
-			free (news);
+DllMain (HMODULE mod, DWORD cause, void *ctx) {
+	if (cause == DLL_PROCESS_DETACH) {
+		for (int i = 0; i < num; i++) {
+			free (olds[i]);
+			free (news[i]);
 		}
+		free (olds);
+		free (news);
+	}
 	if (cause != DLL_PROCESS_ATTACH)
 		return 1;
 
@@ -174,42 +164,37 @@ DllMain (HMODULE mod, DWORD cause, void *ctx)
 	if (file == 0)
 		return 1;
 
-	do
-		{
-			if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-				continue;
+	do {
+		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+			continue;
 
-			char filepath[MAX_PATH];
-			strcpy (filepath, configPath ("translations\\"));
-			strcat (filepath, fd.cFileName);
-			toml_table_t *translationConfig = openConfig (filepath);
+		char filepath[MAX_PATH];
+		strcpy (filepath, configPath ("translations\\"));
+		strcat (filepath, fd.cFileName);
+		toml_table_t *translationConfig = openConfig (filepath);
 
-			if (!readConfigBool (translationConfig, "enabled", false))
-				{
-					toml_free (translationConfig);
-					continue;
-				}
-
-			toml_array_t *translationArray
-				= toml_array_in (translationConfig, "translation");
-			for (int i = 0;; i++)
-				{
-					toml_table_t *translation
-						= toml_table_at (translationArray, i);
-					if (!translation)
-						break;
-					toml_datum_t old = toml_string_in (translation, "old");
-					toml_datum_t new = toml_string_in (translation, "new");
-					if (!old.ok || !new.ok)
-						continue;
-					num++;
-
-					free (old.u.s);
-					free (new.u.s);
-				}
+		if (!readConfigBool (translationConfig, "enabled", false)) {
 			toml_free (translationConfig);
+			continue;
 		}
-	while (FindNextFileA (file, &fd));
+
+		toml_array_t *translationArray
+			= toml_array_in (translationConfig, "translation");
+		for (int i = 0;; i++) {
+			toml_table_t *translation = toml_table_at (translationArray, i);
+			if (!translation)
+				break;
+			toml_datum_t old = toml_string_in (translation, "old");
+			toml_datum_t new = toml_string_in (translation, "new");
+			if (!old.ok || !new.ok)
+				continue;
+			num++;
+
+			free (old.u.s);
+			free (new.u.s);
+		}
+		toml_free (translationConfig);
+	} while (FindNextFileA (file, &fd));
 
 	olds = calloc (num, sizeof (wchar_t *));
 	news = calloc (num, sizeof (wchar_t *));
@@ -217,64 +202,55 @@ DllMain (HMODULE mod, DWORD cause, void *ctx)
 	num = 0;
 
 	file = FindFirstFileA (configPath ("translations\\*.toml"), &fd);
-	do
-		{
-			if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+	do {
+		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+			continue;
+
+		char filepath[MAX_PATH];
+		strcpy (filepath, configPath ("translations\\"));
+		strcat (filepath, fd.cFileName);
+		toml_table_t *translationConfig = openConfig (filepath);
+
+		if (!readConfigBool (translationConfig, "enabled", false)) {
+			toml_free (translationConfig);
+			continue;
+		}
+
+		toml_array_t *translationArray
+			= toml_array_in (translationConfig, "translation");
+		for (int i = 0;; i++) {
+			toml_table_t *translation = toml_table_at (translationArray, i);
+			if (!translation)
+				break;
+			toml_datum_t old = toml_string_in (translation, "old");
+			toml_datum_t new = toml_string_in (translation, "new");
+			toml_datum_t state = toml_string_in (translation, "state");
+			if (!old.ok || !new.ok)
 				continue;
 
-			char filepath[MAX_PATH];
-			strcpy (filepath, configPath ("translations\\"));
-			strcat (filepath, fd.cFileName);
-			toml_table_t *translationConfig = openConfig (filepath);
+			int sizeOld = MultiByteToWideChar (CP_UTF8, 0, old.u.s, -1, 0, 0);
+			int sizeNew = MultiByteToWideChar (CP_UTF8, 0, new.u.s, -1, 0, 0);
 
-			if (!readConfigBool (translationConfig, "enabled", false))
-				{
-					toml_free (translationConfig);
-					continue;
-				}
+			olds[num] = calloc (sizeOld, sizeof (wchar_t));
+			news[num] = calloc (sizeNew, sizeof (wchar_t));
 
-			toml_array_t *translationArray
-				= toml_array_in (translationConfig, "translation");
-			for (int i = 0;; i++)
-				{
-					toml_table_t *translation
-						= toml_table_at (translationArray, i);
-					if (!translation)
-						break;
-					toml_datum_t old = toml_string_in (translation, "old");
-					toml_datum_t new = toml_string_in (translation, "new");
-					toml_datum_t state = toml_string_in (translation, "state");
-					if (!old.ok || !new.ok)
-						continue;
+			MultiByteToWideChar (CP_UTF8, 0, old.u.s, -1, olds[num], sizeOld);
+			MultiByteToWideChar (CP_UTF8, 0, new.u.s, -1, news[num], sizeNew);
 
-					int sizeOld
-						= MultiByteToWideChar (CP_UTF8, 0, old.u.s, -1, 0, 0);
-					int sizeNew
-						= MultiByteToWideChar (CP_UTF8, 0, new.u.s, -1, 0, 0);
+			if (state.ok)
+				states[num] = strToSubGameState (state.u.s);
+			else
+				states[num] = SUB_MAX;
 
-					olds[num] = calloc (sizeOld, sizeof (wchar_t));
-					news[num] = calloc (sizeNew, sizeof (wchar_t));
+			num++;
 
-					MultiByteToWideChar (CP_UTF8, 0, old.u.s, -1, olds[num],
-										 sizeOld);
-					MultiByteToWideChar (CP_UTF8, 0, new.u.s, -1, news[num],
-										 sizeNew);
-
-					if (state.ok)
-						states[num] = strToSubGameState (state.u.s);
-					else
-						states[num] = SUB_MAX;
-
-					num++;
-
-					free (old.u.s);
-					free (new.u.s);
-					if (state.ok)
-						free (state.u.s);
-				}
-			toml_free (translationConfig);
+			free (old.u.s);
+			free (new.u.s);
+			if (state.ok)
+				free (state.u.s);
 		}
-	while (FindNextFileA (file, &fd));
+		toml_free (translationConfig);
+	} while (FindNextFileA (file, &fd));
 
 	return 1;
 }
