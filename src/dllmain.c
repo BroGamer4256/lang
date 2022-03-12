@@ -119,9 +119,24 @@ HOOK (void, __stdcall, DivaDrawTextW, 0x140198380, void *param, uint32_t flags,
 	for (int i = 0; i < num; i++)
 		{
 			if (states[i] != SUB_MAX)
-				if (*(enum SubGameState *)CURRENT_GAME_SUB_STATE_ADDRESS
-					!= states[i])
-					continue;
+				{
+					if (states[i] == SUB_GAME_SEL || states[i] == SUB_SELECTOR)
+						{
+							if (*(enum SubGameState *)
+										CURRENT_GAME_SUB_STATE_ADDRESS
+									!= SUB_GAME_SEL
+								&& *(enum SubGameState *)
+										   CURRENT_GAME_SUB_STATE_ADDRESS
+									   != SUB_SELECTOR)
+								continue;
+						}
+					else if (*(enum SubGameState *)
+								 CURRENT_GAME_SUB_STATE_ADDRESS
+							 != states[i])
+						{
+							continue;
+						}
+				}
 
 			if (wcscmp (*text, olds[i]) == 0)
 				{
