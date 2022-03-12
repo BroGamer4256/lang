@@ -31,4 +31,3 @@ ${OUT}: ${OBJ}
 .PHONY: clean
 clean:
 	rm -rf ${TARGET}
-	#rm -rf SDL/${SDL_TARGET}
