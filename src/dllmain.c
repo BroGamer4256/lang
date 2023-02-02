@@ -7,7 +7,7 @@ int num = 0;
 wchar_t **olds;
 wchar_t **news;
 
-HOOK (void, __stdcall, DivaDrawTextW, 0x140198380, void *param, uint32_t flags,
+HOOK (void, __stdcall, DivaDrawTextW, 0x1402c7400, void *param, uint32_t flags,
 	  const wchar_t **text) {
 	for (int i = 0; i < num; i++) {
 		if (wcscmp (*text, olds[i]) == 0) {
@@ -28,32 +28,21 @@ HOOK (void, __stdcall, DivaDrawTextW, 0x140198380, void *param, uint32_t flags,
 	*/
 }
 
-BOOL WINAPI
-DllMain (HMODULE mod, DWORD cause, void *ctx) {
-	if (cause == DLL_PROCESS_DETACH) {
-		for (int i = 0; i < num; i++) {
-			free (olds[i]);
-			free (news[i]);
-		}
-		free (olds);
-		free (news);
-	}
-	if (cause != DLL_PROCESS_ATTACH)
-		return 1;
-
+void
+init () {
 	INSTALL_HOOK (DivaDrawTextW);
 
 	WIN32_FIND_DATAA fd;
-	HANDLE file = FindFirstFileA (configPath ("translations\\*.toml"), &fd);
+	HANDLE file = FindFirstFileA ("translations\\*.toml", &fd);
 	if (file == 0)
-		return 1;
+		return;
 
 	do {
 		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 			continue;
 
 		char filepath[MAX_PATH];
-		strcpy (filepath, configPath ("translations\\"));
+		strcpy (filepath, "translations\\");
 		strcat (filepath, fd.cFileName);
 		toml_table_t *translationConfig = openConfig (filepath);
 
@@ -84,13 +73,13 @@ DllMain (HMODULE mod, DWORD cause, void *ctx) {
 	news = calloc (num, sizeof (wchar_t *));
 	num = 0;
 
-	file = FindFirstFileA (configPath ("translations\\*.toml"), &fd);
+	file = FindFirstFileA ("translations\\*.toml", &fd);
 	do {
 		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 			continue;
 
 		char filepath[MAX_PATH];
-		strcpy (filepath, configPath ("translations\\"));
+		strcpy (filepath, "translations\\");
 		strcat (filepath, fd.cFileName);
 		toml_table_t *translationConfig = openConfig (filepath);
 
@@ -129,6 +118,4 @@ DllMain (HMODULE mod, DWORD cause, void *ctx) {
 		}
 		toml_free (translationConfig);
 	} while (FindNextFileA (file, &fd));
-
-	return 1;
 }
