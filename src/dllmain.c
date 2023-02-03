@@ -19,17 +19,11 @@ HOOK (void, __stdcall, DivaDrawTextW, 0x1402c7400, void *param, uint32_t flags,
 		}
 	}
 	originalDivaDrawTextW (param, flags, text);
-
-	/*
-	wchar_t buf[256] = { 0 };
-	swprintf (buf, 256, L"[lang] %ls\n\0", *text);
-	HANDLE consoleHandle = GetStdHandle (STD_OUTPUT_HANDLE);
-	WriteConsoleW (consoleHandle, buf, 256, NULL, NULL);
-	*/
 }
 
 void
 init () {
+	freopen ("CONOUT$", "w", stdout);
 	INSTALL_HOOK (DivaDrawTextW);
 
 	WIN32_FIND_DATAA fd;
@@ -45,6 +39,8 @@ init () {
 		strcpy (filepath, "translations\\");
 		strcat (filepath, fd.cFileName);
 		toml_table_t *translationConfig = openConfig (filepath);
+		if (!translationConfig)
+			continue;
 
 		if (!readConfigBool (translationConfig, "enabled", false)) {
 			toml_free (translationConfig);
