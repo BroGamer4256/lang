@@ -1,4 +1,5 @@
 #include "helpers.h"
+#include "sigscan.h"
 #include <stdio.h>
 #include <windows.h>
 
@@ -7,8 +8,9 @@ int num = 0;
 wchar_t **olds;
 wchar_t **news;
 
-HOOK (void, __stdcall, DivaDrawTextW, 0x1402c7400, void *param, uint32_t flags,
-	  const wchar_t **text) {
+SIG_SCAN (sigDrawText, 0x1402C583D, "\xE8\x00\x00\x00\x00\xE9\x00\x00\x00\x00\x4D\x8B\xC1", "x????x????xxx");
+
+HOOK (void, __stdcall, DivaDrawTextW, 0x1402C7400, void *param, uint32_t flags, const wchar_t **text) {
 	for (int i = 0; i < num; i++) {
 		if (wcscmp (*text, olds[i]) == 0) {
 			const wchar_t *ptrs[2];
@@ -21,42 +23,45 @@ HOOK (void, __stdcall, DivaDrawTextW, 0x1402c7400, void *param, uint32_t flags,
 	originalDivaDrawTextW (param, flags, text);
 }
 
+u32
+readUnalignedU32 (u64 memory) {
+	u8 *p = (u8 *)memory;
+	return p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
+}
+
 void
 init () {
 	freopen ("CONOUT$", "w", stdout);
+
+	u64 drawTextLoc    = (u64)sigDrawText ();
+	whereDivaDrawTextW = (void *)(readUnalignedU32 (drawTextLoc + 1) + 5 + drawTextLoc);
 	INSTALL_HOOK (DivaDrawTextW);
 
 	WIN32_FIND_DATAA fd;
 	HANDLE file = FindFirstFileA ("translations\\*.toml", &fd);
-	if (file == 0)
-		return;
+	if (file == 0) return;
 
 	do {
-		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-			continue;
+		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
 
 		char filepath[MAX_PATH];
 		strcpy (filepath, "translations\\");
 		strcat (filepath, fd.cFileName);
 		toml_table_t *translationConfig = openConfig (filepath);
-		if (!translationConfig)
-			continue;
+		if (!translationConfig) continue;
 
 		if (!readConfigBool (translationConfig, "enabled", false)) {
 			toml_free (translationConfig);
 			continue;
 		}
 
-		toml_array_t *translationArray
-			= toml_array_in (translationConfig, "translation");
+		toml_array_t *translationArray = toml_array_in (translationConfig, "translation");
 		for (int i = 0;; i++) {
 			toml_table_t *translation = toml_table_at (translationArray, i);
-			if (!translation)
-				break;
+			if (!translation) break;
 			toml_datum_t old = toml_string_in (translation, "old");
 			toml_datum_t new = toml_string_in (translation, "new");
-			if (!old.ok || !new.ok)
-				continue;
+			if (!old.ok || !new.ok) continue;
 			num++;
 
 			free (old.u.s);
@@ -67,36 +72,31 @@ init () {
 
 	olds = calloc (num, sizeof (wchar_t *));
 	news = calloc (num, sizeof (wchar_t *));
-	num = 0;
+	num  = 0;
 
 	file = FindFirstFileA ("translations\\*.toml", &fd);
 	do {
-		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-			continue;
+		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
 
 		char filepath[MAX_PATH];
 		strcpy (filepath, "translations\\");
 		strcat (filepath, fd.cFileName);
 		toml_table_t *translationConfig = openConfig (filepath);
 
-		if (!translationConfig)
-			continue;
+		if (!translationConfig) continue;
 
 		if (!readConfigBool (translationConfig, "enabled", false)) {
 			toml_free (translationConfig);
 			continue;
 		}
 
-		toml_array_t *translationArray
-			= toml_array_in (translationConfig, "translation");
+		toml_array_t *translationArray = toml_array_in (translationConfig, "translation");
 		for (int i = 0;; i++) {
 			toml_table_t *translation = toml_table_at (translationArray, i);
-			if (!translation)
-				break;
+			if (!translation) break;
 			toml_datum_t old = toml_string_in (translation, "old");
 			toml_datum_t new = toml_string_in (translation, "new");
-			if (!old.ok || !new.ok)
-				continue;
+			if (!old.ok || !new.ok) continue;
 
 			int sizeOld = MultiByteToWideChar (CP_UTF8, 0, old.u.s, -1, 0, 0);
 			int sizeNew = MultiByteToWideChar (CP_UTF8, 0, new.u.s, -1, 0, 0);

@@ -15,8 +15,7 @@ toml_table_t *
 openConfig (char *configFilePath) {
 	FILE *file = fopen (configFilePath, "r");
 	if (!file) {
-		printf ("Error at openConfig (%s): cannot open file\n",
-				configFilePath);
+		printf ("Error at openConfig (%s): cannot open file\n", configFilePath);
 		return 0;
 	}
 	char errorbuf[200];
@@ -35,8 +34,7 @@ toml_table_t *
 openConfigSection (toml_table_t *config, char *sectionName) {
 	toml_table_t *section = toml_table_in (config, sectionName);
 	if (!section) {
-		printf ("Error at openConfigSection (%s): cannot find section\n",
-				sectionName);
+		printf ("Error at openConfigSection (%s): cannot find section\n", sectionName);
 		return 0;
 	}
 
@@ -46,8 +44,7 @@ openConfigSection (toml_table_t *config, char *sectionName) {
 bool
 readConfigBool (toml_table_t *table, char *key, bool notFoundValue) {
 	toml_datum_t data = toml_bool_in (table, key);
-	if (!data.ok)
-		return notFoundValue;
+	if (!data.ok) return notFoundValue;
 
 	return (bool)data.u.b;
 }
@@ -55,8 +52,7 @@ readConfigBool (toml_table_t *table, char *key, bool notFoundValue) {
 int64_t
 readConfigInt (toml_table_t *table, char *key, int64_t notFoundValue) {
 	toml_datum_t data = toml_int_in (table, key);
-	if (!data.ok)
-		return notFoundValue;
+	if (!data.ok) return notFoundValue;
 
 	return data.u.i;
 }
@@ -64,8 +60,7 @@ readConfigInt (toml_table_t *table, char *key, int64_t notFoundValue) {
 char *
 readConfigString (toml_table_t *table, char *key, char *notFoundValue) {
 	toml_datum_t data = toml_string_in (table, key);
-	if (!data.ok)
-		return notFoundValue;
+	if (!data.ok) return notFoundValue;
 
 	return data.u.s;
 }
