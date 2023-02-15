@@ -16,4 +16,10 @@
 		return x##Addr;                                                                                                                                                                                \
 	}
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 void *sigScan (const char *signature, const char *mask, void *hint);
+#ifdef __cplusplus
+}
+#endif

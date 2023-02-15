@@ -4,3 +4,5 @@
 *.dll
 *.zip
 x86_64-pc-windows-gnu/
+compile_commands.json
+.cache

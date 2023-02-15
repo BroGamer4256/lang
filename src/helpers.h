@@ -69,10 +69,16 @@ typedef uint64_t u64;
 
 #define COUNTOFARR(arr) sizeof (arr) / sizeof (arr[0])
 
-char *configPath (char *name);
-toml_table_t *openConfig (char *configFilePath);
-toml_table_t *openConfigW (wchar_t *configFilePath);
-toml_table_t *openConfigSection (toml_table_t *config, char *sectionName);
-bool readConfigBool (toml_table_t *table, char *key, bool notFoundValue);
-int64_t readConfigInt (toml_table_t *table, char *key, int64_t notFoundValue);
-char *readConfigString (toml_table_t *table, char *key, char *notFoundValue);
+#ifdef __cplusplus
+extern "C" {
+#endif
+char *exeDirectory ();
+toml_table_t *openConfig (const char *configFilePath);
+toml_table_t *openConfigW (const wchar_t *configFilePath);
+toml_table_t *openConfigSection (toml_table_t *config, const char *sectionName);
+bool readConfigBool (toml_table_t *table, const char *key, bool notFoundValue);
+int64_t readConfigInt (toml_table_t *table, const char *key, int64_t notFoundValue);
+char *readConfigString (toml_table_t *table, const char *key, char *notFoundValue);
+#ifdef __cplusplus
+}
+#endif

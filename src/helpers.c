@@ -2,17 +2,15 @@
 #include <windows.h>
 
 char *
-configPath (char *name) {
+exeDirectory () {
 	static char buffer[MAX_PATH];
 	GetModuleFileNameA (NULL, buffer, MAX_PATH);
 	*strrchr (buffer, '\\') = 0;
-	strcat (buffer, "\\plugins\\");
-	strcat (buffer, name);
 	return buffer;
 }
 
 toml_table_t *
-openConfig (char *configFilePath) {
+openConfig (const char *configFilePath) {
 	FILE *file = fopen (configFilePath, "r");
 	if (!file) {
 		printf ("Error at openConfig (%s): cannot open file\n", configFilePath);
@@ -31,7 +29,7 @@ openConfig (char *configFilePath) {
 }
 
 toml_table_t *
-openConfigW (wchar_t *configFilePath) {
+openConfigW (const wchar_t *configFilePath) {
 	FILE *file = _wfopen (configFilePath, L"r");
 	if (!file) {
 		wprintf (L"Error at openConfig (%ls): cannot open file\n", configFilePath);
@@ -50,7 +48,7 @@ openConfigW (wchar_t *configFilePath) {
 }
 
 toml_table_t *
-openConfigSection (toml_table_t *config, char *sectionName) {
+openConfigSection (toml_table_t *config, const char *sectionName) {
 	toml_table_t *section = toml_table_in (config, sectionName);
 	if (!section) {
 		printf ("Error at openConfigSection (%s): cannot find section\n", sectionName);
@@ -61,7 +59,7 @@ openConfigSection (toml_table_t *config, char *sectionName) {
 }
 
 bool
-readConfigBool (toml_table_t *table, char *key, bool notFoundValue) {
+readConfigBool (toml_table_t *table, const char *key, bool notFoundValue) {
 	toml_datum_t data = toml_bool_in (table, key);
 	if (!data.ok) return notFoundValue;
 
@@ -69,7 +67,7 @@ readConfigBool (toml_table_t *table, char *key, bool notFoundValue) {
 }
 
 int64_t
-readConfigInt (toml_table_t *table, char *key, int64_t notFoundValue) {
+readConfigInt (toml_table_t *table, const char *key, int64_t notFoundValue) {
 	toml_datum_t data = toml_int_in (table, key);
 	if (!data.ok) return notFoundValue;
 
@@ -77,7 +75,7 @@ readConfigInt (toml_table_t *table, char *key, int64_t notFoundValue) {
 }
 
 char *
-readConfigString (toml_table_t *table, char *key, char *notFoundValue) {
+readConfigString (toml_table_t *table, const char *key, char *notFoundValue) {
 	toml_datum_t data = toml_string_in (table, key);
 	if (!data.ok) return notFoundValue;
 
