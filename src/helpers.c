@@ -31,6 +31,25 @@ openConfig (char *configFilePath) {
 }
 
 toml_table_t *
+openConfigW (wchar_t *configFilePath) {
+	FILE *file = _wfopen (configFilePath, L"r");
+	if (!file) {
+		wprintf (L"Error at openConfig (%ls): cannot open file\n", configFilePath);
+		return 0;
+	}
+	char errorbuf[200];
+	toml_table_t *config = toml_parse_file (file, errorbuf, 200);
+	fclose (file);
+
+	if (!config) {
+		wprintf (L"Error at openConfig (%ls): %s\n", configFilePath, errorbuf);
+		return 0;
+	}
+
+	return config;
+}
+
+toml_table_t *
 openConfigSection (toml_table_t *config, char *sectionName) {
 	toml_table_t *section = toml_table_in (config, sectionName);
 	if (!section) {

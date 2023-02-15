@@ -37,17 +37,17 @@ init () {
 	whereDivaDrawTextW = (void *)(readUnalignedU32 (drawTextLoc + 1) + 5 + drawTextLoc);
 	INSTALL_HOOK (DivaDrawTextW);
 
-	WIN32_FIND_DATAA fd;
-	HANDLE file = FindFirstFileA ("translations\\*.toml", &fd);
+	WIN32_FIND_DATAW fd;
+	HANDLE file = FindFirstFileW (L"translations\\*.toml", &fd);
 	if (file == 0) return;
 
 	do {
 		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
 
-		char filepath[MAX_PATH];
-		strcpy (filepath, "translations\\");
-		strcat (filepath, fd.cFileName);
-		toml_table_t *translationConfig = openConfig (filepath);
+		wchar_t filepath[MAX_PATH];
+		wcscpy (filepath, L"translations\\");
+		wcscat (filepath, fd.cFileName);
+		toml_table_t *translationConfig = openConfigW (filepath);
 		if (!translationConfig) continue;
 
 		if (!readConfigBool (translationConfig, "enabled", false)) {
@@ -68,20 +68,20 @@ init () {
 			free (new.u.s);
 		}
 		toml_free (translationConfig);
-	} while (FindNextFileA (file, &fd));
+	} while (FindNextFileW (file, &fd));
 
 	olds = calloc (num, sizeof (wchar_t *));
 	news = calloc (num, sizeof (wchar_t *));
 	num  = 0;
 
-	file = FindFirstFileA ("translations\\*.toml", &fd);
+	file = FindFirstFileW (L"translations\\*.toml", &fd);
 	do {
 		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
 
-		char filepath[MAX_PATH];
-		strcpy (filepath, "translations\\");
-		strcat (filepath, fd.cFileName);
-		toml_table_t *translationConfig = openConfig (filepath);
+		wchar_t filepath[MAX_PATH];
+		wcscpy (filepath, L"translations\\");
+		wcscat (filepath, fd.cFileName);
+		toml_table_t *translationConfig = openConfigW (filepath);
 
 		if (!translationConfig) continue;
 
@@ -113,5 +113,5 @@ init () {
 			free (new.u.s);
 		}
 		toml_free (translationConfig);
-	} while (FindNextFileA (file, &fd));
+	} while (FindNextFileW (file, &fd));
 }
