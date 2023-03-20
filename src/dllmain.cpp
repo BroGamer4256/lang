@@ -1,5 +1,6 @@
 #include "helpers.h"
 #include "sigscan.h"
+#include <absl/container/flat_hash_map.h>
 #include <processenv.h>
 #include <shlwapi.h>
 #include <stdio.h>
@@ -81,7 +82,7 @@ enum class Menu {
 	GAME,
 };
 
-std::unordered_map<std::wstring, std::pair<std::wstring, Menu>> translations = {};
+absl::flat_hash_map<std::wstring, std::pair<std::wstring, Menu>> translations;
 
 i32
 readUnalignedI32 (u64 memory) {
@@ -141,6 +142,19 @@ init () {
 	if (modDir == 0) return;
 
 	do {
+		wchar_t configPath[MAX_PATH];
+		wcscpy (configPath, L"mods\\");
+		wcscat (configPath, dirData.cFileName);
+		wcscat (configPath, L"\\config.toml");
+		if (!PathFileExistsW (configPath)) continue;
+		toml_table_t *modConfig = openConfigW (configPath);
+		if (!modConfig) continue;
+		if (!readConfigBool (modConfig, "enabled", false)) {
+			toml_free (modConfig);
+			continue;
+		}
+		toml_free (modConfig);
+
 		wchar_t dirPath[MAX_PATH];
 		wcscpy (dirPath, L"mods\\");
 		wcscat (dirPath, dirData.cFileName);

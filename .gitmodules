@@ -1,5 +1,5 @@
 [submodule "minhook"]
-	path = minhook
+	path = subprojects/minhook
 	url = https://github.com/TsudaKageyu/minhook
 [submodule "tomlc99"]
 	path = tomlc99
